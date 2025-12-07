@@ -1,0 +1,16 @@
+{
+    "name": "GTech Catalog",
+    "short_name": "GTech",
+    "description": "GTech Electronics Catalog",
+    "start_url": "/",
+    "display": "standalone",
+    "background_color": "#F8FAFC",
+    "theme_color": "#0044FF",
+    "icons": [
+        {
+            "src": "/icon.png",
+            "sizes": "512x512",
+            "type": "image/png"
+        }
+    ]
+}
