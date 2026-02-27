@@ -21,29 +21,47 @@ export default function Home() {
 
     // Fetch User Discount
     useEffect(() => {
-        if (user?.uid) {
+        if (user?.id) { // Changed user?.uid to user?.id as Supabase uses 'id' instead of 'uid'
+            console.log("[Home] Fetching discount for user:", user.id);
             const fetchUser = async () => {
-                const userDoc = await getDoc(doc(db, "users", user.uid));
-                if (userDoc.exists()) {
-                    setDiscount(userDoc.data().discount_percent || 0);
+                try {
+                    const userDoc = await getDoc(doc(db, "users", user.id));
+                    if (userDoc.exists()) {
+                        console.log("[Home] Found user discount:", userDoc.data().discount_percent);
+                        setDiscount(userDoc.data().discount_percent || 0);
+                    } else {
+                        console.log("[Home] User document not found in Firestore");
+                    }
+                } catch (err) {
+                    console.error("[Home] Error fetching user discount:", err);
                 }
             };
             fetchUser();
+        } else {
+            console.log("[Home] No user.id found yet:", user);
         }
     }, [user]);
 
     // Real-time Products
     useEffect(() => {
+        console.log("[Home] Starting products snapshot listener");
         const unsubscribe = onSnapshot(collection(db, "products"), (snapshot) => {
             const productsData = snapshot.docs.map((doc) => ({
                 id: doc.id,
                 ...doc.data(),
             }));
+            console.log(`[Home] Received ${productsData.length} products`);
             setProducts(productsData);
+            setInitializing(false);
+        }, (err) => {
+            console.error("[Home] Error listening for products:", err);
             setInitializing(false);
         });
 
-        return () => unsubscribe();
+        return () => {
+            console.log("[Home] Cleaning up products snapshot listener");
+            unsubscribe();
+        };
     }, []);
 
     // Helper to resolve image source
@@ -54,10 +72,17 @@ export default function Home() {
         return `data:image/jpeg;base64,${url}`;
     };
 
+    console.log("[Home] Render check - loading:", loading, "initializing:", initializing, "user:", !!user);
+
     if (loading || (initializing && user)) {
         return (
             <div className="flex justify-center items-center min-h-screen bg-light">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+                <div className="flex flex-col items-center gap-4">
+                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+                    <div className="text-gray-500">
+                        {loading ? "Loading Auth..." : "Loading Products..."}
+                    </div>
+                </div>
             </div>
         );
     }
