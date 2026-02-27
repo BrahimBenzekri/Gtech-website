@@ -2,8 +2,7 @@
 import { useState } from "react";
 import { useAuth } from "../../src/context/AuthContext";
 import { useRouter } from "next/navigation";
-import { doc, setDoc } from "firebase/firestore";
-import { db } from "../../src/lib/firebase";
+import { supabase } from "../../src/lib/supabase";
 import Link from 'next/link';
 
 export default function Register() {
@@ -19,13 +18,24 @@ export default function Register() {
         setError("");
         try {
             const { user } = await signup(email, password);
-            // Create user document
-            await setDoc(doc(db, "users", user.uid), {
-                name,
-                email,
-                discount_percent: 0,
-                role: 'client'
-            });
+
+            // Create user document in Supabase
+            if (user) {
+                const { error: dbError } = await supabase.from('customers').insert([
+                    {
+                        id: user.id,
+                        name: name,
+                        email: email,
+                        discount_percent: 0,
+                        role: 'client'
+                    }
+                ]);
+
+                if (dbError) {
+                    console.error("Error creating customer record:", dbError);
+                }
+            }
+
             router.push("/");
         } catch (err) {
             setError("Failed to create account: " + err.message);

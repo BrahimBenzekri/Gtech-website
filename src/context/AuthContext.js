@@ -1,7 +1,6 @@
 "use client";
 import { createContext, useContext, useEffect, useState } from "react";
-import { onAuthStateChanged, signInWithEmailAndPassword, signOut, createUserWithEmailAndPassword } from "firebase/auth";
-import { auth } from "../lib/firebase";
+import { supabase } from "../lib/supabase";
 import { useRouter } from "next/navigation";
 
 const AuthContext = createContext({});
@@ -14,29 +13,39 @@ export const AuthContextProvider = ({ children }) => {
     const router = useRouter();
 
     useEffect(() => {
-        const unsubscribe = onAuthStateChanged(auth, (user) => {
-            if (user) {
-                setUser(user);
-            } else {
-                setUser(null);
-            }
+        // Initial session check
+        const checkUser = async () => {
+            const { data: { session } } = await supabase.auth.getSession();
+            setUser(session?.user || null);
+            setLoading(false);
+        };
+
+        checkUser();
+
+        // Listen for auth changes
+        const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+            setUser(session?.user || null);
             setLoading(false);
         });
 
-        return () => unsubscribe();
+        return () => subscription.unsubscribe();
     }, []);
 
-    const login = (email, password) => {
-        return signInWithEmailAndPassword(auth, email, password);
+    const login = async (email, password) => {
+        const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+        if (error) throw error;
+        return data;
     };
 
-    const signup = (email, password) => {
-        return createUserWithEmailAndPassword(auth, email, password);
+    const signup = async (email, password) => {
+        const { data, error } = await supabase.auth.signUp({ email, password });
+        if (error) throw error;
+        return data;
     };
 
     const logout = async () => {
         setUser(null);
-        await signOut(auth);
+        await supabase.auth.signOut();
         router.push("/login");
     };
 
