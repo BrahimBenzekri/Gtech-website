@@ -2,8 +2,7 @@
 import { useEffect, useState } from "react";
 import { useAuth } from "../src/context/AuthContext";
 import { useRouter } from "next/navigation";
-import { collection, onSnapshot, doc, getDoc } from "firebase/firestore";
-import { db } from "../src/lib/firebase";
+import { supabase } from "../src/lib/supabase";
 
 export default function Home() {
     const { user, loading } = useAuth();
@@ -19,49 +18,59 @@ export default function Home() {
         }
     }, [user, loading, router]);
 
-    // Fetch User Discount
+    // Fetch User Discount from profiles table
     useEffect(() => {
-        if (user?.id) { // Changed user?.uid to user?.id as Supabase uses 'id' instead of 'uid'
+        if (user?.id) {
             console.log("[Home] Fetching discount for user:", user.id);
             const fetchUser = async () => {
                 try {
-                    const userDoc = await getDoc(doc(db, "users", user.id));
-                    if (userDoc.exists()) {
-                        console.log("[Home] Found user discount:", userDoc.data().discount_percent);
-                        setDiscount(userDoc.data().discount_percent || 0);
-                    } else {
-                        console.log("[Home] User document not found in Firestore");
+                    const { data, error } = await supabase
+                        .from('profiles')
+                        .select('discount_percent')
+                        .eq('id', user.id)
+                        .single();
+
+                    if (error) throw error;
+
+                    if (data) {
+                        console.log("[Home] Found user discount:", data.discount_percent);
+                        setDiscount(data.discount_percent || 0);
                     }
                 } catch (err) {
                     console.error("[Home] Error fetching user discount:", err);
                 }
             };
             fetchUser();
-        } else {
-            console.log("[Home] No user.id found yet:", user);
         }
     }, [user]);
 
-    // Real-time Products
+    // Fetch Products with joined images
     useEffect(() => {
-        console.log("[Home] Starting products snapshot listener");
-        const unsubscribe = onSnapshot(collection(db, "products"), (snapshot) => {
-            const productsData = snapshot.docs.map((doc) => ({
-                id: doc.id,
-                ...doc.data(),
-            }));
-            console.log(`[Home] Received ${productsData.length} products`);
-            setProducts(productsData);
-            setInitializing(false);
-        }, (err) => {
-            console.error("[Home] Error listening for products:", err);
-            setInitializing(false);
-        });
+        console.log("[Home] Fetching products...");
+        const fetchProducts = async () => {
+            try {
+                const { data, error } = await supabase
+                    .from('products')
+                    .select('*, product_images(image_url)');
 
-        return () => {
-            console.log("[Home] Cleaning up products snapshot listener");
-            unsubscribe();
+                if (error) throw error;
+
+                // Flatten the image_url from product_images array
+                const productsData = data.map(product => ({
+                    ...product,
+                    image_url: product.product_images?.[0]?.image_url
+                }));
+
+                console.log(`[Home] Received ${productsData.length} products`);
+                setProducts(productsData);
+            } catch (err) {
+                console.error("[Home] Error fetching products:", err);
+            } finally {
+                setInitializing(false);
+            }
         };
+
+        fetchProducts();
     }, []);
 
     // Helper to resolve image source

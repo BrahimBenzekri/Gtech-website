@@ -19,20 +19,20 @@ export default function Register() {
         try {
             const { user } = await signup(email, password);
 
-            // Create user document in Supabase
+            // Create user profile in Supabase
             if (user) {
-                const { error: dbError } = await supabase.from('customers').insert([
+                const { error: dbError } = await supabase.from('profiles').insert([
                     {
                         id: user.id,
                         name: name,
                         email: email,
                         discount_percent: 0,
-                        role: 'client'
+                        role: 'customer'
                     }
                 ]);
 
                 if (dbError) {
-                    console.error("Error creating customer record:", dbError);
+                    console.error("Error creating profile record:", dbError);
                 }
             }
 
