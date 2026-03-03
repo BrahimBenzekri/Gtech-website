@@ -9,6 +9,8 @@ export default function Register() {
     const [name, setName] = useState("");
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
+    const [phone, setPhone] = useState("");
+    const [address, setAddress] = useState("");
     const { signup } = useAuth();
     const router = useRouter();
     const [error, setError] = useState("");
@@ -17,24 +19,15 @@ export default function Register() {
         e.preventDefault();
         setError("");
         try {
-            const { user } = await signup(email, password);
+            // Pass all registration data as metadata to Supabase Auth
+            await signup(email, password, {
+                name,
+                phone,
+                address
+            });
 
-            // Create user profile in Supabase
-            if (user) {
-                const { error: dbError } = await supabase.from('profiles').insert([
-                    {
-                        id: user.id,
-                        name: name,
-                        email: email,
-                        discount_percent: 0,
-                        role: 'customer'
-                    }
-                ]);
-
-                if (dbError) {
-                    console.error("Error creating profile record:", dbError);
-                }
-            }
+            // Note: The handle_new_user trigger in Supabase will automatically
+            // create the profile row using this metadata.
 
             router.push("/");
         } catch (err) {
@@ -60,6 +53,17 @@ export default function Register() {
                         />
                     </div>
                     <div>
+                        <label className="block text-sm font-medium text-gray-700">Phone Number</label>
+                        <input
+                            type="tel"
+                            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary focus:ring-primary p-3 bg-gray-50 bg-opacity-50"
+                            value={phone}
+                            onChange={(e) => setPhone(e.target.value)}
+                            required
+                            placeholder="05XX XX XX XX"
+                        />
+                    </div>
+                    <div>
                         <label className="block text-sm font-medium text-gray-700">Email</label>
                         <input
                             type="email"
@@ -68,6 +72,17 @@ export default function Register() {
                             onChange={(e) => setEmail(e.target.value)}
                             required
                             placeholder="client@example.com"
+                        />
+                    </div>
+                    <div>
+                        <label className="block text-sm font-medium text-gray-700">Address</label>
+                        <input
+                            type="text"
+                            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-primary focus:ring-primary p-3 bg-gray-50 bg-opacity-50"
+                            value={address}
+                            onChange={(e) => setAddress(e.target.value)}
+                            required
+                            placeholder="Your full address"
                         />
                     </div>
                     <div>

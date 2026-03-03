@@ -58,9 +58,15 @@ export const AuthContextProvider = ({ children }) => {
         return data;
     };
 
-    const signup = async (email, password) => {
-        console.log("[AuthContext] Attempting signup for:", email);
-        const { data, error } = await supabase.auth.signUp({ email, password });
+    const signup = async (email, password, metadata = {}) => {
+        console.log("[AuthContext] Attempting signup for:", email, "with metadata:", metadata);
+        const { data, error } = await supabase.auth.signUp({
+            email,
+            password,
+            options: {
+                data: metadata
+            }
+        });
         if (error) {
             console.error("[AuthContext] Signup error:", error);
             throw error;

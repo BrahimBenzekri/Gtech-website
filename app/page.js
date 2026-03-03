@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { supabase } from "../src/lib/supabase";
 
 export default function Home() {
-    const { user, loading } = useAuth();
+    const { user, loading, logout } = useAuth();
     const router = useRouter();
     const [products, setProducts] = useState([]);
     const [discount, setDiscount] = useState(0);
@@ -106,11 +106,19 @@ export default function Home() {
                     <div className="flex items-center gap-3">
                         <img src="/logo.png" alt="GTech Logo" className="h-14 w-auto" />
                     </div>
-                    {discount > 0 && (
-                        <span className="bg-accent text-dark px-3 py-1 rounded-full text-sm font-semibold">
-                            Your Discount: {discount}%
-                        </span>
-                    )}
+                    <div className="flex items-center gap-4">
+                        {discount > 0 && (
+                            <span className="bg-accent text-dark px-3 py-1 rounded-full text-sm font-semibold">
+                                Your Discount: {discount}%
+                            </span>
+                        )}
+                        <button
+                            onClick={() => logout()}
+                            className="bg-gray-100 hover:bg-gray-200 text-gray-600 px-4 py-2 rounded-lg text-sm font-medium transition-colors"
+                        >
+                            Sign Out
+                        </button>
+                    </div>
                 </div>
             </header>
 
