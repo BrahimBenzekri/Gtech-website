@@ -133,7 +133,7 @@ export default function Home() {
                                     ) : (
                                         <div className="w-full h-full flex items-center justify-center text-gray-400">No Image</div>
                                     )}
-                                    {!product.in_stock && (
+                                    {product.stock === 0 && (
                                         <div className="absolute top-0 right-0 bg-red-500 text-white text-xs px-2 py-1 m-2 rounded">
                                             Out of Stock
                                         </div>
