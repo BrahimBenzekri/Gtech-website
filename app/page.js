@@ -19,30 +19,47 @@ export default function Home() {
         }
     }, [user, loading, router]);
 
-    // Fetch User Discount from profiles table
+    // Fetch and Subscribe to User Discount (Real-Time)
     useEffect(() => {
-        if (user?.id) {
-            console.log("[Home] Fetching discount for user:", user.id);
-            const fetchUser = async () => {
-                try {
-                    const { data, error } = await supabase
-                        .from('profiles')
-                        .select('discount_percent')
-                        .eq('id', user.id)
-                        .single();
+        if (!user?.id) return;
 
-                    if (error) throw error;
+        console.log("[Home] Setting up real-time discount subscription for:", user.id);
 
-                    if (data) {
-                        console.log("[Home] Found user discount:", data.discount_percent);
-                        setDiscount(data.discount_percent || 0);
-                    }
-                } catch (err) {
-                    console.error("[Home] Error fetching user discount:", err);
+        // 1. Initial Fetch
+        const fetchDiscount = async () => {
+            const { data, error } = await supabase
+                .from('profiles')
+                .select('discount_percent')
+                .eq('id', user.id)
+                .single();
+            if (!error && data) {
+                setDiscount(data.discount_percent || 0);
+            }
+        };
+        fetchDiscount();
+
+        // 2. Real-time Subscription
+        const channel = supabase
+            .channel(`profile-changes-${user.id}`)
+            .on(
+                'postgres_changes',
+                {
+                    event: 'UPDATE',
+                    schema: 'public',
+                    table: 'profiles',
+                    filter: `id=eq.${user.id}`,
+                },
+                (payload) => {
+                    console.log("[Home] Real-time discount update received:", payload.new.discount_percent);
+                    setDiscount(payload.new.discount_percent || 0);
                 }
-            };
-            fetchUser();
-        }
+            )
+            .subscribe();
+
+        return () => {
+            console.log("[Home] Cleaning up real-time subscription");
+            supabase.removeChannel(channel);
+        };
     }, [user]);
 
     // Fetch Products with joined images

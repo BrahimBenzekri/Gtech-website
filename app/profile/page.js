@@ -18,25 +18,50 @@ export default function Profile() {
     }, [user, loading, router]);
 
     useEffect(() => {
-        if (user?.id) {
-            const fetchProfile = async () => {
-                try {
-                    const { data, error } = await supabase
-                        .from('profiles')
-                        .select('*')
-                        .eq('id', user.id)
-                        .single();
+        if (!user?.id) return;
 
-                    if (error) throw error;
-                    setProfile(data);
-                } catch (err) {
-                    console.error("Error fetching profile:", err);
-                } finally {
-                    setFetching(false);
+        console.log("[Profile] Setting up real-time profile subscription");
+
+        // 1. Initial Fetch
+        const fetchProfile = async () => {
+            try {
+                const { data, error } = await supabase
+                    .from('profiles')
+                    .select('*')
+                    .eq('id', user.id)
+                    .single();
+
+                if (error) throw error;
+                setProfile(data);
+            } catch (err) {
+                console.error("Error fetching profile:", err);
+            } finally {
+                setFetching(false);
+            }
+        };
+        fetchProfile();
+
+        // 2. Real-time Subscription
+        const channel = supabase
+            .channel(`profile-page-${user.id}`)
+            .on(
+                'postgres_changes',
+                {
+                    event: 'UPDATE',
+                    schema: 'public',
+                    table: 'profiles',
+                    filter: `id=eq.${user.id}`,
+                },
+                (payload) => {
+                    console.log("[Profile] Real-time profile update received:", payload.new);
+                    setProfile(payload.new);
                 }
-            };
-            fetchProfile();
-        }
+            )
+            .subscribe();
+
+        return () => {
+            supabase.removeChannel(channel);
+        };
     }, [user]);
 
     if (loading || fetching) {
