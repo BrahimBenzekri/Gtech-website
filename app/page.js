@@ -2,6 +2,7 @@
 import { useEffect, useState } from "react";
 import { useAuth } from "../src/context/AuthContext";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { supabase } from "../src/lib/supabase";
 
 export default function Home() {
@@ -101,22 +102,38 @@ export default function Home() {
     return (
         <main className="min-h-screen bg-light pb-20">
             {/* Header */}
-            <header className="bg-white shadow-sm sticky top-0 z-10">
-                <div className="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
-                    <div className="flex items-center gap-3">
-                        <img src="/logo.png" alt="GTech Logo" className="h-14 w-auto" />
+            <header className="bg-white shadow-sm sticky top-0 z-50">
+                <div className="max-w-7xl mx-auto px-4 py-3 flex justify-between items-center">
+                    <div className="flex items-center gap-6">
+                        <Link href="/">
+                            <img src="/logo.png" alt="GTech Logo" className="h-12 w-auto cursor-pointer hover:opacity-80 transition-opacity" />
+                        </Link>
+                        {discount > 0 && (
+                            <div className="hidden sm:flex items-center bg-accent-light border border-accent rounded-full px-3 py-1 animate-pulse">
+                                <span className="text-dark text-xs font-bold uppercase tracking-wider">
+                                    Special Discount applied: {discount}%
+                                </span>
+                            </div>
+                        )}
                     </div>
+
                     <div className="flex items-center gap-4">
                         {discount > 0 && (
-                            <span className="bg-accent text-dark px-3 py-1 rounded-full text-sm font-semibold">
-                                Your Discount: {discount}%
-                            </span>
+                            <div className="sm:hidden bg-accent text-dark px-2 py-1 rounded text-[10px] font-bold">
+                                {discount}% OFF
+                            </div>
                         )}
+                        <Link href="/profile" className="text-gray-600 hover:text-primary transition-colors flex items-center gap-2 text-sm font-medium">
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                            </svg>
+                            <span className="hidden md:inline">My Profile</span>
+                        </Link>
                         <button
                             onClick={() => logout()}
-                            className="bg-gray-100 hover:bg-gray-200 text-gray-600 px-4 py-2 rounded-lg text-sm font-medium transition-colors"
+                            className="bg-gray-50 border border-gray-200 hover:bg-gray-100 text-gray-700 px-4 py-2 rounded-lg text-sm font-medium transition-all shadow-sm active:scale-95"
                         >
-                            Sign Out
+                            Log Out
                         </button>
                     </div>
                 </div>
